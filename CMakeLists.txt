@@ -11,9 +11,8 @@ add_library(WindingNumber::WindingNumber ALIAS WindingNumber)
 
 target_include_directories(WindingNumber PUBLIC .)
 
-include(onetbb)
 include(simde)
-target_link_libraries(WindingNumber PUBLIC TBB::tbb simde::simde)
+target_link_libraries(WindingNumber PUBLIC simde::simde)
 
 set_target_properties(WindingNumber PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

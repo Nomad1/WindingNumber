@@ -29,9 +29,11 @@
 #include "UT_Array.h"
 
 #include <thread> // This is just included for std::thread::hardware_concurrency()
-namespace UT_Thread { int getNumProcessors() {
+namespace UT_Thread { inline int getNumProcessors() {
     return std::thread::hardware_concurrency();
 }}
+
+#ifdef USE_TBB
 
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_for.h"
@@ -216,7 +218,42 @@ UTparallelForLightItems(const Range &range, const Body &body)
 {
     UTparallelFor(range, body, 2, 1024);
 }
+#else
 
+template <typename T> 
+class UT_BlockedRange
+{
+    public:
+        UT_BlockedRange(T begin, T end) : myBegin(begin), myEnd(end) {}
+
+        bool empty() const { return myBegin == myEnd; }
+        bool is_divisible() const { return (myEnd - myBegin) > 1; }
+
+        T begin() const { return myBegin; }
+        T end() const { return myEnd; }
+
+    private:    
+        T myBegin;
+        T myEnd;
+};
+
+template <typename Range, typename Body>
+void UTparallelFor(
+    const Range &range, const Body &body,
+    const int subscribe_ratio = 2,
+    const int min_grain_size = 1
+)
+{
+    body(range);
+}
+
+template <typename Range, typename Body>
+void UTparallelForLightItems(const Range &range, const Body &body)
+{
+    UTparallelFor(range, body, 2, 1024);
+}
+
+#endif
 /// UTserialFor can be used as a debugging tool to quickly replace a parallel
 /// for with a serial for.
 template <typename Range, typename Body>
